@@ -10,7 +10,7 @@ from collections import Counter
 from concurrent.futures import ProcessPoolExecutor
 import logging
 
-from deepwalk import graph
+import graph
 from deepwalk import walks as serialized_walks
 from gensim.models import Word2Vec
 from skipgram import Skipgram
@@ -42,14 +42,16 @@ def debug(type_, value, tb):
 
 def process(args):
 
-  if args.format == "adjlist":
-    G = graph.load_adjacencylist(args.input, undirected=args.undirected)
-  elif args.format == "edgelist":
-    G = graph.load_edgelist(args.input, undirected=args.undirected)
-  elif args.format == "mat":
-    G = graph.load_matfile(args.input, variable_name=args.matfile_variable_name, undirected=args.undirected)
+  #if args.format == "adjlist":
+  #  G = graph.load_adjacencylist(args.input, undirected=args.undirected)
+  #elif args.format == "edgelist":
+  #  G = graph.load_edgelist(args.input, undirected=args.undirected)
+  #elif args.format == "mat":
+  #  G = graph.load_matfile(args.input, variable_name=args.matfile_variable_name, undirected=args.undirected)
+  if args.format == "w_edgelist":
+    G = graph.load_weighted_edgelist(args.input, undirected=args.undirected)
   else:
-    raise Exception("Unknown file format: '%s'.  Valid formats: 'adjlist', 'edgelist', 'mat'" % args.format)
+    raise Exception("Unknown file format: '%s'.  This version supports only 'w_edgelist'" % args.format)
 
   print("Number of nodes: {}".format(len(G.nodes())))
 

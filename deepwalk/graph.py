@@ -35,7 +35,7 @@ LOGFORMAT = "%(asctime).19s %(levelname)s %(filename)s: %(lineno)s %(message)s"
 class Graph(defaultdict):
   """Efficient basic implementation of nx `Graph' â€“ Undirected graphs with self loops"""  
   def __init__(self):
-    super(Graph, self).__init__(list)
+    super(Graph, self).__init__(dict)
 
   def nodes(self):
     return self.keys()
@@ -125,7 +125,7 @@ class Graph(defaultdict):
     "Returns the number of nodes in the graph"
     return order()
 
-  def random_walk(self, path_length, alpha=0, rand=random.Random(), start=None):
+  def random_walk(self, path_length, alpha=0, rand=random.Random(), start=None, cumulated_cache=None):
     """ Returns a truncated random walk.
 
         path_length: Length of the random walk.
@@ -138,17 +138,37 @@ class Graph(defaultdict):
     else:
       # Sampling is uniform w.r.t V, and not w.r.t E
       path = [rand.choice(G.keys())]
-
+    
     while len(path) < path_length:
       cur = path[-1]
       if len(G[cur]) > 0:
         if rand.random() >= alpha:
-          path.append(rand.choice(G[cur]))
+          #path.append(rand.choice(G[cur].keys()))
+          path.append(weighted_choice(G[cur], cumulated_cache[cur]))
         else:
           path.append(path[0])
       else:
         break
     return path
+
+def compute_weighted_random_choice_cache(G):
+  cumulated = dict()
+  for e, n1 in enumerate(G):
+    cumulated[n1] = dict()
+    upto = 0.
+    for n2 in G[n1].keys():
+      upto += G[n1][n2]
+      cumulated[n1][n2] = upto
+  return cumulated
+
+def weighted_choice(choicesd, cumulated):
+  choices = choicesd.keys()
+  r = random.uniform(0, cumulated[choices[-1]])
+  for c in choices:
+    if cumulated[c] >= r:
+      return c
+  assert False, "exceeds the random range"
+
 
 # TODO add build_walks in here
 
@@ -158,10 +178,17 @@ def build_deepwalk_corpus(G, num_paths, path_length, alpha=0,
 
   nodes = list(G.nodes())
   
+  cumulated_cache = compute_weighted_random_choice_cache(G)
+
+  total = float(num_paths*len(nodes))
   for cnt in range(num_paths):
     rand.shuffle(nodes)
-    for node in nodes:
-      walks.append(G.random_walk(path_length, rand=rand, alpha=alpha, start=node))
+    for e, node in enumerate(nodes):
+      if e % 100 == 0:
+        sys.stderr.write("\rrandom walk progress: %.2f%%" % ( ((cnt*len(nodes)+e)/total)*100 ) )
+        sys.stderr.flush()
+      walks.append(G.random_walk(path_length, rand=rand, alpha=alpha, start=node, cumulated_cache=cumulated_cache))
+  sys.stderr.write("\n")
   
   return walks
 
@@ -256,6 +283,21 @@ def load_edgelist(file_, undirected=True):
         G[y].append(x)
   
   G.make_consistent()
+  return G
+
+def load_weighted_edgelist(file_, undirected=True):
+  G = Graph()
+  with open(file_) as f:
+    for l in f:
+      x, y, w = l.strip().split()[:3]
+      x = int(x)
+      y = int(y)
+      w = float(w)
+      if x == y: continue # remove self loop
+      G[x][y] = w
+      if undirected:
+        G[y][x] = w
+  
   return G
 
 
