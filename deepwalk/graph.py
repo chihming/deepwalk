@@ -19,8 +19,12 @@ from itertools import product,permutations
 from scipy.io import loadmat
 from scipy.sparse import issparse
 
+from numpy.random import choice
+
 from concurrent.futures import ProcessPoolExecutor
 
+from multiprocessing import Queue
+from multiprocessing import Process
 from multiprocessing import Pool
 from multiprocessing import cpu_count
 
@@ -125,7 +129,7 @@ class Graph(defaultdict):
     "Returns the number of nodes in the graph"
     return order()
 
-  def random_walk(self, path_length, alpha=0, rand=random.Random(), start=None, cumulated_cache=None):
+  def random_walk(self, path_length, alpha=0, rand=random.Random(), nodes=None, cumulated_cache=None, weights=None, q=None, p=None):
     """ Returns a truncated random walk.
 
         path_length: Length of the random walk.
@@ -133,33 +137,43 @@ class Graph(defaultdict):
         start: the start node of the random walk.
     """
     G = self
-    if start:
-      path = [start]
-    else:
-      # Sampling is uniform w.r.t V, and not w.r.t E
-      path = [rand.choice(G.keys())]
-    
-    while len(path) < path_length:
-      cur = path[-1]
-      if len(G[cur]) > 0:
-        if rand.random() >= alpha:
-          #path.append(rand.choice(G[cur].keys()))
-          path.append(weighted_choice(G[cur], cumulated_cache[cur]))
-        else:
-          path.append(path[0])
+    paths = []
+
+    for node in nodes:
+      if node:
+        path = [node]
       else:
-        break
-    return path
+        # Sampling is uniform w.r.t V, and not w.r.t E
+        path = [rand.choice(G.keys())]
+      while len(path) < path_length:
+        cur = path[-1]
+        if len(G[cur]) > 0:
+          if rand.random() >= alpha:
+            #path.append(rand.choice(G[cur].keys()))
+            path.append(weighted_choice(G[cur], cumulated_cache[cur]))
+            #path.append(choice(G[cur].keys(), p=weights[cur]))
+          else:
+            path.append(path[0])
+        else:
+          break
+      paths.append(path)
+    q.put(paths)
 
 def compute_weighted_random_choice_cache(G):
   cumulated = dict()
+  weights = dict()
   for e, n1 in enumerate(G):
     cumulated[n1] = dict()
+    #weights[n1] =list()
     upto = 0.
     for n2 in G[n1].keys():
       upto += G[n1][n2]
       cumulated[n1][n2] = upto
-  return cumulated
+      #weights[n1].append(G[n1][n2])
+  #for n1 in weights:
+  #    weights[n1] = [float(i)/sum(weights[n1]) for i in weights[n1]]
+
+  return cumulated, weights
 
 def weighted_choice(choicesd, cumulated):
   choices = choicesd.keys()
@@ -173,21 +187,43 @@ def weighted_choice(choicesd, cumulated):
 # TODO add build_walks in here
 
 def build_deepwalk_corpus(G, num_paths, path_length, alpha=0,
-                      rand=random.Random(0)):
+                      rand=random.Random(0), workers=1):
+  q = Queue()
+  procs = []
   walks = []
 
   nodes = list(G.nodes())
   
-  cumulated_cache = compute_weighted_random_choice_cache(G)
+  cumulated_cache, weights = compute_weighted_random_choice_cache(G)
+  print "build walk"
 
   total = float(num_paths*len(nodes))
   for cnt in range(num_paths):
     rand.shuffle(nodes)
-    for e, node in enumerate(nodes):
-      if e % 100 == 0:
-        sys.stderr.write("\rrandom walk progress: %.2f%%" % ( ((cnt*len(nodes)+e)/total)*100 ) )
-        sys.stderr.flush()
-      walks.append(G.random_walk(path_length, rand=rand, alpha=alpha, start=node, cumulated_cache=cumulated_cache))
+    
+    pool = Pool(processes=workers)
+    step = len(nodes)/workers + 1
+    start = 0
+    end = step
+
+    for p in xrange(workers):
+      p = Process( target=G.random_walk, args=(path_length, alpha, rand, nodes[start:end], cumulated_cache, weights, q, p))
+      start += step
+      end += step
+      end = min(end, len(nodes))
+
+      procs.append(p)
+      p.start()
+
+    for i in range(workers):
+        for walk in q.get():
+            walks.append(walk)
+
+    for p in procs:
+      p.join()
+    sys.stderr.write("\rprogress: %d / %d" % (cnt, num_paths))
+    sys.stderr.flush()
+      
   sys.stderr.write("\n")
   
   return walks
