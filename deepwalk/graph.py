@@ -201,7 +201,6 @@ def build_deepwalk_corpus(G, num_paths, path_length, alpha=0,
   for cnt in range(num_paths):
     rand.shuffle(nodes)
     
-    pool = Pool(processes=workers)
     step = len(nodes)/workers + 1
     start = 0
     end = step
@@ -216,12 +215,11 @@ def build_deepwalk_corpus(G, num_paths, path_length, alpha=0,
       p.start()
 
     for i in range(workers):
-        for walk in q.get():
-            walks.append(walk)
+      walks.extend(q.get())
 
     for p in procs:
       p.join()
-    sys.stderr.write("\rprogress: %d / %d" % (cnt, num_paths))
+    sys.stderr.write("\rprogress: %.2f %%" % ( cnt*100/float(num_paths) ))
     sys.stderr.flush()
       
   sys.stderr.write("\n")
