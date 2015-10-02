@@ -15,6 +15,7 @@ from collections import defaultdict, Iterable
 from multiprocessing import cpu_count
 import random
 from random import shuffle
+import bisect
 from itertools import product,permutations
 from scipy.io import loadmat
 from scipy.sparse import issparse
@@ -129,7 +130,7 @@ class Graph(defaultdict):
     "Returns the number of nodes in the graph"
     return order()
 
-  def random_walk(self, path_length, alpha=0, rand=random.Random(), nodes=None, cumulated_cache=None, weights=None, q=None, p=None):
+  def random_walk(self, path_length, alpha=0, rand=random.Random(), cumulated_cache=None, nodes=None, q=None, p=None):
     """ Returns a truncated random walk.
 
         path_length: Length of the random walk.
@@ -163,24 +164,27 @@ def compute_weighted_random_choice_cache(G):
   cumulated = dict()
   weights = dict()
   for e, n1 in enumerate(G):
-    cumulated[n1] = dict()
+    cumulated[n1] = list()
     #weights[n1] =list()
     upto = 0.
     for n2 in G[n1].keys():
       upto += G[n1][n2]
-      cumulated[n1][n2] = upto
+      cumulated[n1].append(upto)
       #weights[n1].append(G[n1][n2])
   #for n1 in weights:
   #    weights[n1] = [float(i)/sum(weights[n1]) for i in weights[n1]]
 
-  return cumulated, weights
+  return cumulated
 
 def weighted_choice(choicesd, cumulated):
   choices = choicesd.keys()
-  r = random.uniform(0, cumulated[choices[-1]])
-  for c in choices:
-    if cumulated[c] >= r:
-      return c
+
+  r = random.uniform(0, cumulated[-1])
+  pos = bisect.bisect_right(cumulated, r)
+  return choices[pos]
+  #for c in choices:
+  #  if cumulated[c] >= r:
+  #    return c
   assert False, "exceeds the random range"
 
 
@@ -188,13 +192,14 @@ def weighted_choice(choicesd, cumulated):
 
 def build_deepwalk_corpus(G, num_paths, path_length, alpha=0,
                       rand=random.Random(0), workers=1):
+  walker = 1 # FIXME
   q = Queue()
   procs = []
   walks = []
 
   nodes = list(G.nodes())
   
-  cumulated_cache, weights = compute_weighted_random_choice_cache(G)
+  cumulated_cache = compute_weighted_random_choice_cache(G)
   print "build walk"
 
   total = float(num_paths*len(nodes))
@@ -206,7 +211,7 @@ def build_deepwalk_corpus(G, num_paths, path_length, alpha=0,
     end = step
 
     for p in xrange(workers):
-      p = Process( target=G.random_walk, args=(path_length, alpha, rand, nodes[start:end], cumulated_cache, weights, q, p))
+      p = Process( target=G.random_walk, args=(path_length, alpha, rand, cumulated_cache, nodes[start:end], q, p))
       start += step
       end += step
       end = min(end, len(nodes))
