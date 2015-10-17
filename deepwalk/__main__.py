@@ -76,7 +76,7 @@ def process(args):
         model.build_vocab(walks)
         model.train(walks)
 
-        sys.stderr.write("\rprogress: %.2f (%d/%d) %%" % ((i+1.)/(args.number_walks+1), i+1, args.number_walks+1))
+        sys.stderr.write("\rprogress: %.2f (%d/%d) %%" % ((i+1.)*100/(args.number_walks+1), i+1, args.number_walks+1))
         sys.stderr.flush()
 
   else:
