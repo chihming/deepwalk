@@ -200,10 +200,10 @@ def build_deepwalk_corpus(G, num_paths, path_length, alpha=0,
   nodes = list(G.nodes())
   
   cumulated_cache = compute_weighted_random_choice_cache(G)
-  print "build walk"
+  #print "build walk"
 
-  total = float(num_paths*len(nodes))
-  for cnt in range(num_paths):
+  #for cnt in range(num_paths):
+  for cnt in range(1):
     rand.shuffle(nodes)
     
     step = len(nodes)/workers + 1
@@ -224,11 +224,7 @@ def build_deepwalk_corpus(G, num_paths, path_length, alpha=0,
 
     for p in procs:
       p.join()
-    sys.stderr.write("\rprogress: %.2f %%" % ( cnt*100/float(num_paths) ))
-    sys.stderr.flush()
       
-  sys.stderr.write("\n")
-  
   return walks
 
 def build_deepwalk_corpus_iter(G, num_paths, path_length, alpha=0,
