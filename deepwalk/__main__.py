@@ -75,7 +75,7 @@ def process(args):
                      window=args.window_size, min_count=0, workers=args.workers)
 
     print("Walking & Training...")
-    sys.stderr.write("\rprogress: 0.00 [0/%d] %%\n" % (args.number_walks+1))
+    sys.stderr.write("\rprogress: 0.00 [0/%d] %%" % (args.number_walks+1))
 
     for i in xrange(args.number_walks):
         
@@ -89,7 +89,7 @@ def process(args):
 
         model.build_vocab(walks)
         model.train(walks)
-    sys.stderr.write("\rprogress: 100.00 %%")
+    sys.stderr.write("\rprogress: 100.00 %%\n")
     sys.stderr.flush()
 
   else:
