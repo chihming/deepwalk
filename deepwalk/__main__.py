@@ -66,17 +66,23 @@ def process(args):
   if data_size < args.max_memory_data_size:
     
     print("Initailizing...")
-    model = Word2Vec(None, size=args.representation_size, window=args.window_size, min_count=0, workers=args.workers)
+    
+    vertex_counts = G.degree(nodes=G.iterkeys())
+    #model = Word2Vec(None, size=args.representation_size, window=args.window_size, min_count=0, workers=args.workers)
+    model = Skipgram(sentences=None, vocabulary_counts=vertex_counts,
+                     size=args.representation_size,
+                     window=args.window_size, min_count=0, workers=args.workers)
+    model.build_vocab(None)
 
     print("Walking & Training...")
-    sys.stderr.write("\rprogress: 0.00 (0/%d) %%" % (args.number_walks+1))
+    sys.stderr.write("\rprogress: 0.00 (0/%d) %%\n" % (args.number_walks+1))
+
     for i in xrange(args.number_walks):
         walks = graph.build_deepwalk_corpus(G, num_paths=args.number_walks,
                                             path_length=args.walk_length, alpha=0, rand=random.Random(args.seed), workers=args.workers)
-        model.build_vocab(walks)
-        model.train(walks)
 
-        sys.stderr.write("\rprogress: %.2f (%d/%d) %%" % ((i+1.)*100/(args.number_walks+1), i+1, args.number_walks+1))
+        model.train(walks)
+        sys.stderr.write("\rprogress: %.2f (%d/%d) %%\n" % ((i+1.)*100/(args.number_walks+1), i+1, args.number_walks+1))
         sys.stderr.flush()
 
   else:

@@ -25,6 +25,9 @@ class Skipgram(Word2Vec):
           self.vocabulary_counts = vocabulary_counts
 
         super(Skipgram, self).__init__(**kwargs)
+        
+        if vocabulary_counts != None:
+            self.build_vocab(None)
 
     def build_vocab(self, corpus):
         """
