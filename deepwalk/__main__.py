@@ -23,7 +23,8 @@ import psutil
 from multiprocessing import cpu_count
 
 p = psutil.Process(os.getpid())
-p.set_cpu_affinity(list(range(cpu_count())))
+#p.set_cpu_affinity(list(range(cpu_count())))
+p.cpu_affinity(list(range(cpu_count())))
 
 logger = logging.getLogger(__name__)
 LOGFORMAT = "%(asctime).19s %(levelname)s %(filename)s: %(lineno)s %(message)s"
@@ -72,18 +73,24 @@ def process(args):
     model = Skipgram(sentences=None, vocabulary_counts=vertex_counts,
                      size=args.representation_size,
                      window=args.window_size, min_count=0, workers=args.workers)
-    model.build_vocab(None)
 
     print("Walking & Training...")
-    sys.stderr.write("\rprogress: 0.00 (0/%d) %%\n" % (args.number_walks+1))
+    sys.stderr.write("\rprogress: 0.00 [0/%d] %%\n" % (args.number_walks+1))
 
     for i in xrange(args.number_walks):
+        
+        sys.stderr.write("\rprogress: %.2f %% [%d/%d] (walk step) " % ((i)*100/(args.number_walks+1), i+1, args.number_walks+1))
+        sys.stderr.flush()
         walks = graph.build_deepwalk_corpus(G, num_paths=args.number_walks,
                                             path_length=args.walk_length, alpha=0, rand=random.Random(args.seed), workers=args.workers)
 
-        model.train(walks)
-        sys.stderr.write("\rprogress: %.2f (%d/%d) %%\n" % ((i+1.)*100/(args.number_walks+1), i+1, args.number_walks+1))
+        sys.stderr.write("\rprogress: %.2f %% [%d/%d] (train step) " % ((i+.5)*100/(args.number_walks+1), i+1, args.number_walks+1))
         sys.stderr.flush()
+
+        model.build_vocab(walks)
+        model.train(walks)
+    sys.stderr.write("\rprogress: 100.00 %%")
+    sys.stderr.flush()
 
   else:
     print("Data size {} is larger than limit (max-memory-data-size: {}).  Dumping walks to disk.".format(data_size, args.max_memory_data_size))
