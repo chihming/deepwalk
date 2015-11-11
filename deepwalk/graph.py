@@ -325,8 +325,8 @@ def load_weighted_edgelist(file_, undirected=True):
   with open(file_) as f:
     for l in f:
       x, y, w = l.strip().split()[:3]
-      x = int(x)
-      y = int(y)
+      x = x
+      y = y
       w = float(w)
       if x == y: continue # remove self loop
       G[x][y] = w
