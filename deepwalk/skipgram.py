@@ -20,6 +20,7 @@ class Skipgram(Word2Vec):
         kwargs["workers"] = kwargs.get("workers", cpu_count())
         kwargs["size"] = kwargs.get("size", 128)
         kwargs["sentences"] = kwargs.get("sentences", None)
+        kwargs["sg"] = 0
 
         if vocabulary_counts != None:
           self.vocabulary_counts = vocabulary_counts
@@ -52,14 +53,10 @@ class Skipgram(Word2Vec):
                 self.index2word.append(word)
                 self.vocab[word] = v
 
+        self.corpus_count = len(vocab)
+        self.raw_vocab = vocab
+
         logger.debug("total %i word types after removing those with count<%s" % (len(self.vocab), self.min_count))
 
-        if self.hs:
-            # add info about each word's Huffman encoding
-            self.create_binary_tree()
-        if self.negative:
-            # build the table for drawing random words (for negative sampling)
-            self.make_table()
-        # precalculate downsampling thresholds
-        self.precalc_sampling()
-        self.reset_weights()
+        self.scale_vocab()
+        self.finalize_vocab()
