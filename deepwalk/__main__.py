@@ -72,7 +72,7 @@ def process(args):
     #model = Word2Vec(None, size=args.representation_size, window=args.window_size, min_count=0, workers=args.workers)
     model = Skipgram(sentences=None, vocabulary_counts=vertex_counts,
                      size=args.representation_size,
-                     window=args.window_size, min_count=0, workers=args.workers)
+                     window=args.window_size, min_count=0, workers=args.workers, sg=args.sg)
 
     print("Walking & Training...")
     sys.stderr.write("\rprogress: 0.00 [0/%d] %%" % (args.number_walks+1))
@@ -127,6 +127,7 @@ def main():
   parser.add_argument('--format', default='adjlist',
                       help='File format of input file')
 
+
   parser.add_argument('--input', nargs='?', required=True,
                       help='Input graph file')
 
@@ -152,6 +153,9 @@ def main():
                       help='Seed for random walk generator.')
 
   parser.add_argument('--undirected', default=True, type=bool,
+                      help='Treat graph as undirected.')
+
+  parser.add_argument('--sg', default=True, type=bool,
                       help='Treat graph as undirected.')
 
   parser.add_argument('--vertex-freq-degree', default=False, action='store_true',
