@@ -79,12 +79,12 @@ def process(args):
 
     for i in xrange(args.number_walks):
         
-        sys.stderr.write("\rprogress: %.2f %% [%d/%d] (walk step) " % ((i)*100/(args.number_walks+1), i+1, args.number_walks+1))
+        sys.stderr.write("\rprogress: %.2f %% [%d/%d] (walk step) " % ((i)*100./(args.number_walks+1), i+1, args.number_walks+1))
         sys.stderr.flush()
         walks = graph.build_deepwalk_corpus(G, num_paths=args.number_walks,
-                                            path_length=args.walk_length, alpha=0, rand=random.Random(args.seed), workers=args.workers)
+                                            path_length=args.walk_length, alpha=0.2, rand=random.Random(args.seed), workers=args.workers)
 
-        sys.stderr.write("\rprogress: %.2f %% [%d/%d] (train step) " % ((i+.5)*100/(args.number_walks+1), i+1, args.number_walks+1))
+        sys.stderr.write("\rprogress: %.2f %% [%d/%d] (train step) " % ((i+.5)*100./(args.number_walks+1), i+1, args.number_walks+1))
         sys.stderr.flush()
 
         #model.build_vocab(walks)
