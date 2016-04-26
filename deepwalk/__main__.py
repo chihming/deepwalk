@@ -64,7 +64,7 @@ def process(args):
 
   print("Data size (walks*length): {}".format(data_size))
 
-  if data_size < args.max_memory_data_size:
+  if True:
     
     print("Initailizing...")
     
@@ -82,7 +82,7 @@ def process(args):
         sys.stderr.write("\rprogress: %.2f %% [%d/%d] (walk step) " % ((i)*100./(args.number_walks+1), i+1, args.number_walks+1))
         sys.stderr.flush()
         walks = graph.build_deepwalk_corpus(G, num_paths=args.number_walks,
-                                            path_length=args.walk_length, alpha=0.2, rand=random.Random(args.seed), workers=args.workers)
+                                            path_length=args.walk_length, alpha=0., rand=random.Random(args.seed), workers=args.workers)
 
         sys.stderr.write("\rprogress: %.2f %% [%d/%d] (train step) " % ((i+.5)*100./(args.number_walks+1), i+1, args.number_walks+1))
         sys.stderr.flush()
@@ -98,7 +98,7 @@ def process(args):
 
     walks_filebase = args.output + ".walks"
     walk_files = serialized_walks.write_walks_to_disk(G, walks_filebase, num_paths=args.number_walks,
-                                         path_length=args.walk_length, alpha=0, rand=random.Random(args.seed),
+                                         path_length=args.walk_length, alpha=0.1, rand=random.Random(args.seed),
                                          num_workers=args.workers)
 
     print("Counting vertex frequency...")

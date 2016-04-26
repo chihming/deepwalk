@@ -35,10 +35,10 @@ class Skipgram(Word2Vec):
         Build vocabulary from a sequence of sentences or from a frequency dictionary, if one was provided.
         """
         if self.vocabulary_counts != None:
-          logger.debug("building vocabulary from provided frequency map")
+          print "building vocabulary from provided frequency map"
           vocab = self.vocabulary_counts
         else:
-          logger.debug("default vocabulary building")
+          print "default vocabulary building"
           super(Skipgram, self).build_vocab(corpus)
           return
 
