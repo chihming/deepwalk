@@ -21,6 +21,7 @@ class Skipgram(Word2Vec):
         kwargs["size"] = kwargs.get("size", 128)
         kwargs["sentences"] = kwargs.get("sentences", None)
         kwargs["sg"] = kwargs.get("sg", 0)
+        kwargs["batch_words"] = 100
 
         if vocabulary_counts != None:
           self.vocabulary_counts = vocabulary_counts
